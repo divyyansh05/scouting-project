@@ -1,0 +1,307 @@
+{% extends "layout.html" %}
+
+{% block title %}{{ player_name }} - Football Data Pipeline{% endblock %}
+
+{% block head %}
+<style>
+    .player-header {
+        display: flex;
+        gap: 2rem;
+        align-items: flex-start;
+        margin-bottom: 2rem;
+    }
+
+    .player-avatar {
+        width: 120px;
+        height: 120px;
+        background: linear-gradient(135deg, var(--accent) 0%, rgba(59, 130, 246, 0.5) 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3rem;
+        font-weight: 700;
+        color: white;
+    }
+
+    .player-info h1 {
+        margin: 0 0 0.5rem 0;
+    }
+
+    .player-meta {
+        display: flex;
+        gap: 1.5rem;
+        color: var(--text-secondary);
+        font-size: 0.9rem;
+    }
+
+    .player-meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .career-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .career-stat {
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        text-align: center;
+    }
+
+    .career-stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: var(--accent);
+    }
+
+    .career-stat-label {
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+
+    .season-card {
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 0.75rem;
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .season-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .season-title {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .season-team {
+        font-size: 0.875rem;
+        color: var(--text-secondary);
+    }
+
+    .season-league {
+        background: rgba(34, 197, 94, 0.2);
+        color: var(--success);
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+
+    .season-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        gap: 1rem;
+    }
+
+    .season-stat {
+        text-align: center;
+    }
+
+    .season-stat-value {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary);
+    }
+
+    .season-stat-value.highlight {
+        color: var(--accent);
+    }
+
+    .season-stat-label {
+        font-size: 0.65rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 3rem;
+        color: var(--text-secondary);
+    }
+
+    .position-badge {
+        background: rgba(59, 130, 246, 0.2);
+        color: var(--accent);
+        padding: 0.25rem 0.75rem;
+        border-radius: 1rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<a href="/players"
+    style="color: var(--text-secondary); text-decoration: none; display: flex; align-items: center; margin-bottom: 1rem;">
+    <span>← Back to Players</span>
+</a>
+
+<div class="player-header">
+    <div class="player-avatar" id="playerAvatar">?</div>
+    <div class="player-info">
+        <h1>{{ player_name }}</h1>
+        <div class="player-meta">
+            <div class="player-meta-item">
+                <span class="position-badge" id="posBadge">Loading...</span>
+            </div>
+            <div class="player-meta-item" id="nationalityMeta">
+                🌍 <span id="natVal">-</span>
+            </div>
+            <div class="player-meta-item" id="dobMeta">
+                📅 <span id="dobVal">-</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Career Totals -->
+<h2 style="margin-bottom: 1rem;">Career Statistics</h2>
+<div class="career-stats" id="careerStats">
+    <div class="career-stat">
+        <div class="career-stat-value" id="totalMatches">-</div>
+        <div class="career-stat-label">Matches</div>
+    </div>
+    <div class="career-stat">
+        <div class="career-stat-value" id="totalGoals">-</div>
+        <div class="career-stat-label">Goals</div>
+    </div>
+    <div class="career-stat">
+        <div class="career-stat-value" id="totalAssists">-</div>
+        <div class="career-stat-label">Assists</div>
+    </div>
+    <div class="career-stat">
+        <div class="career-stat-value" id="totalMinutes">-</div>
+        <div class="career-stat-label">Minutes</div>
+    </div>
+    <div class="career-stat">
+        <div class="career-stat-value" id="totalXG">-</div>
+        <div class="career-stat-label">xG</div>
+    </div>
+    <div class="career-stat">
+        <div class="career-stat-value" id="totalXAG">-</div>
+        <div class="career-stat-label">xAG</div>
+    </div>
+</div>
+
+<!-- Season by Season -->
+<h2 style="margin-bottom: 1rem;">Season Breakdown</h2>
+<div id="seasonContainer">
+    <div class="empty-state">Loading season stats...</div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const playerId = {{ player_id }};
+
+    async function fetchPlayerDetails() {
+        try {
+            const response = await fetch(`/api/players/${playerId}`);
+            if (!response.ok) throw new Error("Player not found");
+            const data = await response.json();
+
+            // Avatar initial
+            document.getElementById('playerAvatar').innerText = data.name ? data.name.charAt(0).toUpperCase() : '?';
+
+            // Info
+            document.getElementById('posBadge').innerText = data.position || 'Unknown';
+            document.getElementById('natVal').innerText = data.nationality || '-';
+            document.getElementById('dobVal').innerText = data.dob || '-';
+
+            // Career totals
+            if (data.career_totals) {
+                document.getElementById('totalMatches').innerText = data.career_totals.matches || 0;
+                document.getElementById('totalGoals').innerText = data.career_totals.goals || 0;
+                document.getElementById('totalAssists').innerText = data.career_totals.assists || 0;
+                document.getElementById('totalMinutes').innerText = (data.career_totals.minutes || 0).toLocaleString();
+                document.getElementById('totalXG').innerText = (data.career_totals.xg || 0).toFixed(1);
+                document.getElementById('totalXAG').innerText = (data.career_totals.xag || 0).toFixed(1);
+            }
+
+            // Season stats
+            const container = document.getElementById('seasonContainer');
+            if (!data.season_stats || data.season_stats.length === 0) {
+                container.innerHTML = '<div class="empty-state">No season statistics available for this player.</div>';
+                return;
+            }
+
+            container.innerHTML = data.season_stats.map(s => `
+                <div class="season-card">
+                    <div class="season-header">
+                        <div>
+                            <div class="season-title">${s.season}</div>
+                            <div class="season-team">🛡️ ${s.team}</div>
+                        </div>
+                        <span class="season-league">${s.league}</span>
+                    </div>
+                    <div class="season-stats">
+                        <div class="season-stat">
+                            <div class="season-stat-value">${s.matches}</div>
+                            <div class="season-stat-label">Apps</div>
+                        </div>
+                        <div class="season-stat">
+                            <div class="season-stat-value">${s.starts}</div>
+                            <div class="season-stat-label">Starts</div>
+                        </div>
+                        <div class="season-stat">
+                            <div class="season-stat-value">${s.minutes.toLocaleString()}</div>
+                            <div class="season-stat-label">Minutes</div>
+                        </div>
+                        <div class="season-stat">
+                            <div class="season-stat-value highlight">${s.goals}</div>
+                            <div class="season-stat-label">Goals</div>
+                        </div>
+                        <div class="season-stat">
+                            <div class="season-stat-value highlight">${s.assists}</div>
+                            <div class="season-stat-label">Assists</div>
+                        </div>
+                        <div class="season-stat">
+                            <div class="season-stat-value">${s.xg.toFixed(1)}</div>
+                            <div class="season-stat-label">xG</div>
+                        </div>
+                        <div class="season-stat">
+                            <div class="season-stat-value">${s.xag.toFixed(1)}</div>
+                            <div class="season-stat-label">xAG</div>
+                        </div>
+                        <div class="season-stat">
+                            <div class="season-stat-value">${s.shots}</div>
+                            <div class="season-stat-label">Shots</div>
+                        </div>
+                        <div class="season-stat">
+                            <div class="season-stat-value">${s.key_passes}</div>
+                            <div class="season-stat-label">Key Pass</div>
+                        </div>
+                        <div class="season-stat">
+                            <div class="season-stat-value">${s.yellow_cards}</div>
+                            <div class="season-stat-label">Yellows</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+        } catch (e) {
+            console.error("Failed to fetch player details", e);
+            document.getElementById('seasonContainer').innerHTML = '<div class="empty-state">Failed to load player data.</div>';
+        }
+    }
+
+    fetchPlayerDetails();
+</script>
+{% endblock %}

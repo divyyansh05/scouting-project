@@ -1,0 +1,1084 @@
+# ============================================================================
+# METRICS REGISTRY - SINGLE SOURCE OF TRUTH
+# ============================================================================
+#
+# PURPOSE:
+# --------
+# This file defines ALL metrics that exist in the system.
+# It serves as a contract between:
+#   1. Database (what raw stats we have)
+#   2. Services (what can be computed)
+#   3. LLM (what can be requested)
+#   4. UI (what can be displayed)
+#
+# ANTI-HALLUCINATION STRATEGY:
+# ----------------------------
+# When LLM parses user queries like "Find players with high xG", it MUST
+# check this registry. If "xg_per90" is not here, the request is INVALID.
+#
+# This prevents LLM from:
+#   - Inventing metrics that don't exist
+#   - Using incorrect metric names
+#   - Requesting metrics we can't compute
+#
+# ============================================================================
+
+version: "1.0"
+last_updated: "2024-12-16"
+
+# ============================================================================
+# METRIC CATEGORIES
+# ============================================================================
+categories:
+  passing:
+    display_name: "Passing"
+    description: "Metrics related to passing ability and distribution"
+    icon: "pass"
+
+  shooting:
+    display_name: "Shooting"
+    description: "Metrics related to shot-taking and finishing"
+    icon: "goal"
+
+  defending:
+    display_name: "Defending"
+    description: "Metrics related to defensive actions"
+    icon: "shield"
+
+  possession:
+    display_name: "Possession"
+    description: "Metrics related to ball carrying and retention"
+    icon: "ball"
+
+  discipline:
+    display_name: "Discipline"
+    description: "Fouls, cards, and defensive discipline"
+    icon: "card"
+
+  physical:
+    display_name: "Physical"
+    description: "Physical and athletic metrics"
+    icon: "run"
+
+  creative:
+    display_name: "Creativity"
+    description: "Chance creation and playmaking"
+    icon: "creative"
+
+
+# ============================================================================
+# METRIC DEFINITIONS
+# ============================================================================
+metrics:
+  # --------------------------------------------------------------------------
+  # PASSING METRICS
+  # --------------------------------------------------------------------------
+  passes_attempted_per90:
+    display_name: "Passes Attempted per 90"
+    short_name: "Passes/90"
+    category: passing
+    description: "Total number of passes attempted per 90 minutes"
+    unit: "passes"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["passes per 90", "passes per game", "pass attempts"]
+    related_metrics: ["pass_completion_pct", "passes_completed_per90"]
+
+  passes_completed_per90:
+    display_name: "Passes Completed per 90"
+    short_name: "Passes Comp/90"
+    category: passing
+    description: "Number of successful passes per 90 minutes"
+    unit: "passes"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["completed passes", "successful passes"]
+    related_metrics: ["passes_attempted_per90", "pass_completion_pct"]
+
+  pass_completion_pct:
+    display_name: "Pass Completion %"
+    short_name: "Pass%"
+    category: passing
+    description: "Percentage of passes that are completed successfully"
+    unit: "percent"
+    stat_type: percentage
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: 100
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["pass accuracy", "passing percentage", "completion rate"]
+    related_metrics: ["passes_attempted_per90", "passes_completed_per90"]
+
+  progressive_passes_per90:
+    display_name: "Progressive Passes per 90"
+    short_name: "Prog Pass/90"
+    category: passing
+    description: "Passes that move the ball significantly closer to opponent's goal"
+    unit: "passes"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["progressive passing", "forward passes", "penetrative passes"]
+    related_metrics: ["progressive_carries_per90", "passes_into_final_third_per90"]
+
+  progressive_pass_distance_per90:
+    display_name: "Progressive Pass Distance per 90"
+    short_name: "Prog Dist/90"
+    category: passing
+    description: "Total distance of progressive passes per 90 minutes"
+    unit: "yards"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["progressive distance", "forward pass distance"]
+    related_metrics: ["progressive_passes_per90"]
+
+  passes_into_final_third_per90:
+    display_name: "Passes into Final Third per 90"
+    short_name: "Final 3rd/90"
+    category: passing
+    description: "Passes that enter the attacking third of the pitch"
+    unit: "passes"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["final third passes", "attacking third passes"]
+    related_metrics: ["passes_into_penalty_area_per90", "progressive_passes_per90"]
+
+  passes_into_penalty_area_per90:
+    display_name: "Passes into Penalty Area per 90"
+    short_name: "Into Box/90"
+    category: passing
+    description: "Passes that successfully enter the opponent's penalty area"
+    unit: "passes"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["passes into box", "box entries", "penalty area passes"]
+    related_metrics: ["key_passes_per90", "crosses_into_penalty_area_per90"]
+
+  # --------------------------------------------------------------------------
+  # CREATIVE METRICS
+  # --------------------------------------------------------------------------
+  key_passes_per90:
+    display_name: "Key Passes per 90"
+    short_name: "Key Pass/90"
+    category: creative
+    description: "Passes that directly lead to a shot attempt"
+    unit: "passes"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 2
+    requires_minimum_minutes: 450
+    synonyms: ["key pass", "shot-creating passes", "chance creation"]
+    related_metrics: ["assists_per90", "xag_per90", "passes_into_penalty_area_per90"]
+
+  assists_per90:
+    display_name: "Assists per 90"
+    short_name: "Assists/90"
+    category: creative
+    description: "Final passes leading to goals per 90 minutes"
+    unit: "assists"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 2
+    requires_minimum_minutes: 450
+    synonyms: ["assists", "goals assisted", "goal assists"]
+    related_metrics: ["xag_per90", "key_passes_per90", "goals_per90"]
+
+  xag_per90:
+    display_name: "Expected Assisted Goals per 90"
+    short_name: "xAG/90"
+    category: creative
+    description: "Expected goals from passes leading to shots per 90 minutes"
+    unit: "xAG"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 2
+    requires_minimum_minutes: 450
+    synonyms: ["xA", "expected assists", "assist quality"]
+    related_metrics: ["assists_per90", "key_passes_per90"]
+
+  through_balls_per90:
+    display_name: "Through Balls per 90"
+    short_name: "Thru/90"
+    category: creative
+    description: "Passes played between defenders to teammates"
+    unit: "passes"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 2
+    requires_minimum_minutes: 450
+    synonyms: ["through ball", "splitting passes"]
+    related_metrics: ["key_passes_per90", "progressive_passes_per90"]
+
+  crosses_per90:
+    display_name: "Crosses per 90"
+    short_name: "Cross/90"
+    category: creative
+    description: "Crosses from wide areas into the box"
+    unit: "crosses"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["crossing", "cross attempts"]
+    related_metrics: ["cross_completion_pct", "passes_into_penalty_area_per90"]
+
+  cross_completion_pct:
+    display_name: "Cross Completion %"
+    short_name: "Cross%"
+    category: creative
+    description: "Percentage of crosses that find a teammate"
+    unit: "percent"
+    stat_type: percentage
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: 100
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["crossing accuracy", "successful crosses"]
+    related_metrics: ["crosses_per90"]
+
+  # --------------------------------------------------------------------------
+  # SHOOTING METRICS
+  # --------------------------------------------------------------------------
+  goals_per90:
+    display_name: "Goals per 90"
+    short_name: "Goals/90"
+    category: shooting
+    description: "Goals scored per 90 minutes"
+    unit: "goals"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 2
+    requires_minimum_minutes: 450
+    synonyms: ["goals", "scoring rate", "goal frequency"]
+    related_metrics: ["xg_per90", "shots_per90", "shot_on_target_pct"]
+
+  xg_per90:
+    display_name: "Expected Goals per 90"
+    short_name: "xG/90"
+    category: shooting
+    description: "Expected goals based on shot quality per 90 minutes"
+    unit: "xG"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 2
+    requires_minimum_minutes: 450
+    synonyms: ["xG", "expected goals", "xG per game"]
+    related_metrics: ["goals_per90", "xg_overperformance", "shots_per90"]
+
+  xg_overperformance:
+    display_name: "xG Overperformance"
+    short_name: "G - xG"
+    category: shooting
+    description: "Difference between actual goals and expected goals (finishing quality)"
+    unit: "goals"
+    stat_type: ratio
+    higher_is_better: true
+    data_type: float
+    min_value: null
+    max_value: null
+    precision: 2
+    requires_minimum_minutes: 900
+    synonyms: ["goals above expected", "finishing quality", "clinical finishing"]
+    related_metrics: ["goals_per90", "xg_per90", "shot_on_target_pct"]
+
+  shots_per90:
+    display_name: "Shots per 90"
+    short_name: "Shots/90"
+    category: shooting
+    description: "Total shot attempts per 90 minutes"
+    unit: "shots"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["shots", "shot volume", "shooting frequency"]
+    related_metrics: ["shots_on_target_per90", "goals_per90", "xg_per90"]
+
+  shots_on_target_per90:
+    display_name: "Shots on Target per 90"
+    short_name: "SoT/90"
+    category: shooting
+    description: "Shots that would score without goalkeeper intervention"
+    unit: "shots"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["on target", "shots on goal"]
+    related_metrics: ["shots_per90", "shot_on_target_pct", "goals_per90"]
+
+  shot_on_target_pct:
+    display_name: "Shot on Target %"
+    short_name: "SoT%"
+    category: shooting
+    description: "Percentage of shots that are on target"
+    unit: "percent"
+    stat_type: percentage
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: 100
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["shot accuracy", "on target rate"]
+    related_metrics: ["shots_per90", "shots_on_target_per90"]
+
+  conversion_rate:
+    display_name: "Conversion Rate"
+    short_name: "Conv%"
+    category: shooting
+    description: "Percentage of shots that result in goals"
+    unit: "percent"
+    stat_type: percentage
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: 100
+    precision: 1
+    requires_minimum_minutes: 900
+    synonyms: ["shooting percentage", "goal conversion"]
+    related_metrics: ["goals_per90", "shots_per90", "xg_overperformance"]
+
+  npxg_per90:
+    display_name: "Non-Penalty xG per 90"
+    short_name: "npxG/90"
+    category: shooting
+    description: "Expected goals excluding penalties per 90 minutes"
+    unit: "npxG"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 2
+    requires_minimum_minutes: 450
+    synonyms: ["non-penalty expected goals", "npxG"]
+    related_metrics: ["xg_per90", "non_penalty_goals_per90"]
+
+  # --------------------------------------------------------------------------
+  # DEFENDING METRICS
+  # --------------------------------------------------------------------------
+  tackles_per90:
+    display_name: "Tackles per 90"
+    short_name: "Tkl/90"
+    category: defending
+    description: "Successful tackles per 90 minutes"
+    unit: "tackles"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["tackles", "tackling rate"]
+    related_metrics: ["tackles_won_pct", "interceptions_per90", "defensive_actions_per90"]
+
+  tackles_won_pct:
+    display_name: "Tackles Won %"
+    short_name: "Tkl%"
+    category: defending
+    description: "Percentage of tackle attempts that are successful"
+    unit: "percent"
+    stat_type: percentage
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: 100
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["tackle success rate", "tackling accuracy"]
+    related_metrics: ["tackles_per90", "dribbled_past_per90"]
+
+  interceptions_per90:
+    display_name: "Interceptions per 90"
+    short_name: "Int/90"
+    category: defending
+    description: "Number of times player intercepts opponent passes"
+    unit: "interceptions"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["interceptions", "int"]
+    related_metrics: ["tackles_per90", "blocks_per90", "defensive_actions_per90"]
+
+  blocks_per90:
+    display_name: "Blocks per 90"
+    short_name: "Blk/90"
+    category: defending
+    description: "Blocked shots and passes per 90 minutes"
+    unit: "blocks"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["blocks", "blocked shots"]
+    related_metrics: ["interceptions_per90", "tackles_per90"]
+
+  clearances_per90:
+    display_name: "Clearances per 90"
+    short_name: "Clr/90"
+    category: defending
+    description: "Defensive clearances per 90 minutes"
+    unit: "clearances"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["clearances", "defensive clearances"]
+    related_metrics: ["aerial_duels_won_per90", "blocks_per90"]
+
+  aerial_duels_won_per90:
+    display_name: "Aerial Duels Won per 90"
+    short_name: "Aer Won/90"
+    category: defending
+    description: "Number of aerial duels won per 90 minutes"
+    unit: "duels"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["aerials won", "headers won"]
+    related_metrics: ["aerial_duels_won_pct", "clearances_per90"]
+
+  aerial_duels_won_pct:
+    display_name: "Aerial Duels Won %"
+    short_name: "Aer%"
+    category: defending
+    description: "Percentage of aerial duels won"
+    unit: "percent"
+    stat_type: percentage
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: 100
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["aerial success rate", "heading accuracy"]
+    related_metrics: ["aerial_duels_won_per90"]
+
+  defensive_actions_per90:
+    display_name: "Defensive Actions per 90"
+    short_name: "Def Act/90"
+    category: defending
+    description: "Combined tackles, interceptions, and blocks per 90"
+    unit: "actions"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["defensive activity", "total defensive actions"]
+    related_metrics: ["tackles_per90", "interceptions_per90", "blocks_per90"]
+
+  dribbled_past_per90:
+    display_name: "Dribbled Past per 90"
+    short_name: "Drib Past/90"
+    category: defending
+    description: "Times beaten by opponent dribbles per 90 (lower is better)"
+    unit: "times"
+    stat_type: per90
+    higher_is_better: false
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["beaten by dribbles", "dribbled against"]
+    related_metrics: ["tackles_won_pct", "tackles_per90"]
+
+  # --------------------------------------------------------------------------
+  # POSSESSION METRICS
+  # --------------------------------------------------------------------------
+  touches_per90:
+    display_name: "Touches per 90"
+    short_name: "Touch/90"
+    category: possession
+    description: "Total ball touches per 90 minutes"
+    unit: "touches"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["touches", "ball contacts"]
+    related_metrics: ["passes_attempted_per90", "carries_per90"]
+
+  carries_per90:
+    display_name: "Carries per 90"
+    short_name: "Carry/90"
+    category: possession
+    description: "Number of times player moves with the ball per 90 minutes"
+    unit: "carries"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["ball carries", "dribble runs"]
+    related_metrics: ["progressive_carries_per90", "carry_distance_per90"]
+
+  progressive_carries_per90:
+    display_name: "Progressive Carries per 90"
+    short_name: "Prog Carry/90"
+    category: possession
+    description: "Carries that move the ball significantly toward opponent goal"
+    unit: "carries"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["progressive runs", "forward carries"]
+    related_metrics: ["carries_per90", "progressive_passes_per90"]
+
+  carry_distance_per90:
+    display_name: "Carry Distance per 90"
+    short_name: "Carry Dist/90"
+    category: possession
+    description: "Total distance carried with the ball per 90 minutes"
+    unit: "yards"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["dribble distance", "carrying distance"]
+    related_metrics: ["carries_per90", "progressive_carry_distance_per90"]
+
+  dribbles_completed_per90:
+    display_name: "Dribbles Completed per 90"
+    short_name: "Drib/90"
+    category: possession
+    description: "Successful take-ons of opponents per 90 minutes"
+    unit: "dribbles"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["successful dribbles", "take-ons", "beat defenders"]
+    related_metrics: ["dribble_success_pct", "progressive_carries_per90"]
+
+  dribble_success_pct:
+    display_name: "Dribble Success %"
+    short_name: "Drib%"
+    category: possession
+    description: "Percentage of dribble attempts that are successful"
+    unit: "percent"
+    stat_type: percentage
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: 100
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["dribble success rate", "take-on percentage"]
+    related_metrics: ["dribbles_completed_per90"]
+
+  miscontrols_per90:
+    display_name: "Miscontrols per 90"
+    short_name: "Miscon/90"
+    category: possession
+    description: "Times player loses control of ball per 90 (lower is better)"
+    unit: "miscontrols"
+    stat_type: per90
+    higher_is_better: false
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["bad touches", "loose touches"]
+    related_metrics: ["dispossessed_per90"]
+
+  dispossessed_per90:
+    display_name: "Dispossessed per 90"
+    short_name: "Disp/90"
+    category: possession
+    description: "Times player loses possession to opponent per 90 (lower is better)"
+    unit: "times"
+    stat_type: per90
+    higher_is_better: false
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["lost possession", "turnovers"]
+    related_metrics: ["miscontrols_per90"]
+
+  # --------------------------------------------------------------------------
+  # DISCIPLINE METRICS
+  # --------------------------------------------------------------------------
+  fouls_committed_per90:
+    display_name: "Fouls Committed per 90"
+    short_name: "Fouls/90"
+    category: discipline
+    description: "Fouls committed per 90 minutes (lower is better)"
+    unit: "fouls"
+    stat_type: per90
+    higher_is_better: false
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["fouls", "fouls against"]
+    related_metrics: ["yellow_cards_per90", "tackles_per90"]
+
+  fouls_drawn_per90:
+    display_name: "Fouls Drawn per 90"
+    short_name: "Fouls Won/90"
+    category: discipline
+    description: "Fouls won/drawn per 90 minutes"
+    unit: "fouls"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["fouls won", "fouls earned"]
+    related_metrics: ["dribbles_completed_per90"]
+
+  yellow_cards_per90:
+    display_name: "Yellow Cards per 90"
+    short_name: "Yellow/90"
+    category: discipline
+    description: "Yellow cards received per 90 minutes (lower is better)"
+    unit: "cards"
+    stat_type: per90
+    higher_is_better: false
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 2
+    requires_minimum_minutes: 900
+    synonyms: ["yellow cards", "bookings"]
+    related_metrics: ["fouls_committed_per90", "red_cards_per90"]
+
+  red_cards_per90:
+    display_name: "Red Cards per 90"
+    short_name: "Red/90"
+    category: discipline
+    description: "Red cards received per 90 minutes (lower is better)"
+    unit: "cards"
+    stat_type: per90
+    higher_is_better: false
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 3
+    requires_minimum_minutes: 1800
+    synonyms: ["red cards", "sendings off"]
+    related_metrics: ["yellow_cards_per90"]
+
+  # --------------------------------------------------------------------------
+  # PHYSICAL METRICS
+  # --------------------------------------------------------------------------
+  minutes_played:
+    display_name: "Minutes Played"
+    short_name: "Minutes"
+    category: physical
+    description: "Total minutes played"
+    unit: "minutes"
+    stat_type: raw
+    higher_is_better: true
+    data_type: int
+    min_value: 0
+    max_value: null
+    precision: 0
+    requires_minimum_minutes: 0
+    synonyms: ["playing time", "mins"]
+    related_metrics: []
+
+  matches_played:
+    display_name: "Matches Played"
+    short_name: "Apps"
+    category: physical
+    description: "Number of matches played"
+    unit: "matches"
+    stat_type: raw
+    higher_is_better: true
+    data_type: int
+    min_value: 0
+    max_value: null
+    precision: 0
+    requires_minimum_minutes: 0
+    synonyms: ["appearances", "games played"]
+    related_metrics: ["minutes_played"]
+
+  distance_covered_per90:
+    display_name: "Distance Covered per 90"
+    short_name: "Distance/90"
+    category: physical
+    description: "Total distance covered per 90 minutes"
+    unit: "km"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["running distance", "km covered"]
+    related_metrics: ["sprint_distance_per90"]
+
+  sprint_distance_per90:
+    display_name: "Sprint Distance per 90"
+    short_name: "Sprint/90"
+    category: physical
+    description: "Distance covered at sprint speed per 90 minutes"
+    unit: "meters"
+    stat_type: per90
+    higher_is_better: true
+    data_type: float
+    min_value: 0
+    max_value: null
+    precision: 1
+    requires_minimum_minutes: 450
+    synonyms: ["high-speed running", "sprinting distance"]
+    related_metrics: ["distance_covered_per90"]
+
+
+# ============================================================================
+# VALIDATION RULES
+# ============================================================================
+validation_rules:
+  # Minimum sample sizes for meaningful analysis
+  minimum_minutes_for_analysis: 450  # ~5 full matches
+  minimum_minutes_for_percentiles: 900  # ~10 full matches
+
+  # Metric compatibility rules
+  incompatible_combinations:
+    # Can't compare goalkeeper metrics with outfield metrics
+    - [saves_per90, goals_per90]
+
+  # Position-specific metric restrictions
+  position_restrictions:
+    GK:
+      allowed_categories: [defending, discipline, physical]
+      forbidden_metrics: [goals_per90, assists_per90, dribbles_completed_per90]
+    DF:
+      primary_categories: [defending, passing, physical]
+    MF:
+      primary_categories: [passing, creative, possession]
+    FW:
+      primary_categories: [shooting, creative, possession]
+
+
+# ============================================================================
+# ROLE TEMPLATES
+# ============================================================================
+roles:
+  defensive_midfielder:
+    display_name: "Defensive Midfielder (DM)"
+    short_name: "DM"
+    description: "Defensive shield, breaks up play, recycles possession"
+    metrics:
+      - tackles_per90
+      - interceptions_per90
+      - pass_completion_pct
+      - progressive_passes_per90
+    weights:
+      tackles_per90: 0.35
+      interceptions_per90: 0.35
+      pass_completion_pct: 0.15
+      progressive_passes_per90: 0.15
+
+  box_to_box:
+    display_name: "Box-to-Box Midfielder (B2B)"
+    short_name: "B2B"
+    description: "All-action midfielder, contributes both phases"
+    metrics:
+      - tackles_per90
+      - progressive_passes_per90
+      - key_passes_per90
+      - carries_per90
+    weights:
+      tackles_per90: 0.25
+      progressive_passes_per90: 0.30
+      key_passes_per90: 0.25
+      carries_per90: 0.20
+
+  attacking_midfielder:
+    display_name: "Attacking Midfielder (AM)"
+    short_name: "AM"
+    description: "Creative playmaker, chance creation focus"
+    metrics:
+      - key_passes_per90
+      - progressive_passes_per90
+      - xg_per90
+      - dribbles_completed_per90
+    weights:
+      key_passes_per90: 0.40
+      progressive_passes_per90: 0.25
+      xg_per90: 0.20
+      dribbles_completed_per90: 0.15
+
+  winger:
+    display_name: "Winger"
+    short_name: "W"
+    description: "Wide attacker, dribbling and chance creation"
+    metrics:
+      - dribbles_completed_per90
+      - key_passes_per90
+      - xg_per90
+      - shots_per90
+    weights:
+      dribbles_completed_per90: 0.35
+      key_passes_per90: 0.25
+      xg_per90: 0.25
+      shots_per90: 0.15
+
+  striker:
+    display_name: "Striker (ST)"
+    short_name: "ST"
+    description: "Primary goal scorer"
+    metrics:
+      - goals_per90
+      - xg_per90
+      - shots_per90
+      - aerial_duels_won_pct
+    weights:
+      goals_per90: 0.40
+      xg_per90: 0.30
+      shots_per90: 0.20
+      aerial_duels_won_pct: 0.10
+
+  center_back:
+    display_name: "Center Back (CB)"
+    short_name: "CB"
+    description: "Central defender"
+    metrics:
+      - tackles_per90
+      - interceptions_per90
+      - clearances_per90
+      - aerial_duels_won_pct
+      - blocks_per90
+      - pass_completion_pct
+    weights:
+      tackles_per90: 0.20
+      interceptions_per90: 0.20
+      clearances_per90: 0.15
+      aerial_duels_won_pct: 0.20
+      blocks_per90: 0.10
+      pass_completion_pct: 0.15
+
+
+# ============================================================================
+# PRESET METRIC GROUPS (for common analyses)
+# ============================================================================
+preset_groups:
+  striker_profile:
+    display_name: "Striker Profile"
+    metrics:
+      - goals_per90
+      - xg_per90
+      - shots_per90
+      - shot_on_target_pct
+      - aerial_duels_won_pct
+      - xg_overperformance
+
+  creative_midfielder_profile:
+    display_name: "Creative Midfielder"
+    metrics:
+      - key_passes_per90
+      - assists_per90
+      - xag_per90
+      - progressive_passes_per90
+      - passes_into_penalty_area_per90
+      - dribbles_completed_per90
+
+  defensive_midfielder_profile:
+    display_name: "Defensive Midfielder"
+    metrics:
+      - tackles_per90
+      - interceptions_per90
+      - pass_completion_pct
+      - progressive_passes_per90
+      - defensive_actions_per90
+      - fouls_committed_per90
+
+  box_to_box_profile:
+    display_name: "Box-to-Box Midfielder"
+    metrics:
+      - tackles_per90
+      - progressive_passes_per90
+      - progressive_carries_per90
+      - key_passes_per90
+      - distance_covered_per90
+      - defensive_actions_per90
+
+  winger_profile:
+    display_name: "Winger"
+    metrics:
+      - dribbles_completed_per90
+      - crosses_per90
+      - key_passes_per90
+      - xg_per90
+      - progressive_carries_per90
+      - fouls_drawn_per90
+
+  center_back_profile:
+    display_name: "Center Back"
+    metrics:
+      - tackles_per90
+      - interceptions_per90
+      - clearances_per90
+      - aerial_duels_won_pct
+      - blocks_per90
+      - pass_completion_pct
+
+
+# ============================================================================
+# COHORT DEFINITIONS
+# ============================================================================
+cohorts:
+  by_position:
+    enabled: true
+    positions:
+      - GK
+      - DF
+      - MF
+      - FW
+
+  by_age:
+    enabled: true
+    brackets:
+      - [16, 20]  # Youth
+      - [21, 25]  # Young
+      - [26, 30]  # Prime
+      - [31, 99]  # Veteran
+
+  by_league:
+    enabled: true
+    tier_1:  # Top 5 leagues
+      - Premier League
+      - La Liga
+      - Serie A
+      - Bundesliga
+      - Ligue 1
+    tier_2:  # Second tier leagues
+      - Eredivisie
+      - Liga Portugal
+      - Championship
+
+
+# ============================================================================
+# VISUALIZATION PRESETS
+# ============================================================================
+visualization_presets:
+  midfielder_radar:
+    metrics:
+      - tackles_per90
+      - interceptions_per90
+      - pass_completion_pct
+      - progressive_passes_per90
+      - key_passes_per90
+      - dribbles_completed_per90
+
+  attacker_radar:
+    metrics:
+      - goals_per90
+      - xg_per90
+      - shots_per90
+      - key_passes_per90
+      - dribbles_completed_per90
+      - aerial_duels_won_pct
+
+  defender_radar:
+    metrics:
+      - tackles_per90
+      - interceptions_per90
+      - blocks_per90
+      - aerial_duels_won_pct
+      - pass_completion_pct
+      - progressive_passes_per90

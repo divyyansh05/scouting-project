@@ -1,0 +1,82 @@
+# ============================================================================
+# config/settings.yaml
+# ============================================================================
+# Application Settings Configuration
+# DO NOT commit sensitive values - use environment variables
+
+database:
+  # Note: These are defaults only. Environment variables (from .env) take priority.
+  # Values here are only used if corresponding DB_* env var is not set.
+  host: localhost
+  port: 5434
+  database: football_data
+  user: postgres
+  password: postgres
+  read_only: true
+  pool_size: 5
+  max_overflow: 10
+
+cache:
+  enabled: true
+  backend: memory  # Options: memory, redis
+  ttl: 3600  # seconds
+  redis_url: redis://localhost:6379/0
+
+llm:
+  provider: anthropic  # Options: anthropic, openai
+  model: claude-sonnet-4
+  # api_key loaded from ANTHROPIC_API_KEY env var
+  max_tokens: 2000
+  temperature: 0.3
+
+  # Query parsing settings
+  parse_timeout: 10
+  explanation_max_length: 500
+
+app:
+  debug: true
+  host: 0.0.0.0
+  port: 8050
+  title: "Chelsea FC Scouting Analytics"
+  theme: "cyborg"  # Dash Bootstrap theme
+
+  # Feature flags
+  enable_llm_query: true
+  enable_similarity_search: true
+  enable_role_matching: true
+
+metrics:
+  # Minimum minutes played for inclusion
+  min_minutes: 450
+
+  # Percentile calculation method
+  percentile_method: "rank"  # Options: rank, normal
+
+  # Age adjustment curves
+  age_adjustment:
+    enabled: true
+    peak_age: 27
+    decline_rate: 0.02
+
+visualization:
+  # Default plot settings
+  default_height: 600
+  default_width: 800
+  color_scheme: "plotly"
+
+  # Radar chart settings
+  radar:
+    fill_opacity: 0.3
+    line_width: 2
+    max_categories: 10
+
+  # Scatter plot settings
+  scatter:
+    point_size: 10
+    show_labels: true
+    label_threshold: 20  # Show labels for top N players
+
+logging:
+  level: INFO
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+  file: "logs/scouting_app.log"
